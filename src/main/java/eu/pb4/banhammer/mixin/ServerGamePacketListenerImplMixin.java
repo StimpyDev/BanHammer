@@ -1,8 +1,6 @@
 package eu.pb4.banhammer.mixin;
 
-import eu.pb4.banhammer.api.PunishmentType;
-import eu.pb4.banhammer.impl.BanHammerImpl;
-import eu.pb4.banhammer.impl.config.ConfigManager;
+import eu.pb4.banhammer.impl.BHUtils;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.LastSeenMessages;
@@ -22,6 +20,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import eu.pb4.banhammer.impl.config.ConfigManager;
 
 import java.util.Optional;
 
@@ -41,27 +40,12 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
 
     @Inject(method = "handleChat", at = @At("HEAD"), cancellable = true)
     private void banHammer_checkIfMuted(ServerboundChatPacket packet, CallbackInfo ci) {
-        boolean blocked = false;
-        for (var punishment : BanHammerImpl.CACHED_PUNISHMENTS) {
-            if (!punishment.isExpired() && punishment.type == PunishmentType.MUTE && punishment.playerUUID.equals(this.player.getUUID())) {
-                this.player.displayClientMessage(punishment.getDisconnectMessage(PlaceholderContext.of(this.player)), false);
-                ci.cancel();
-                blocked = true;
-            }
-        }
+        var mute = BHUtils.getActiveMute(this.player);
 
-        if (!blocked) {
-            var punishments = BanHammerImpl.getPlayersPunishments(this.player.getUUID().toString(), PunishmentType.MUTE);
-            if (!punishments.isEmpty()) {
-                var punishment = punishments.getFirst();
+        if (mute != null) {
+            this.player.displayClientMessage(mute.getDisconnectMessage(PlaceholderContext.of(this.player)), false);
+            ci.cancel();
 
-                this.player.displayClientMessage(punishment.getDisconnectMessage(PlaceholderContext.of(this.player)), false);
-                ci.cancel();
-                blocked = true;
-            }
-        }
-
-        if (blocked) {
             Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
             optional.ifPresent(lastSeenMessageList -> this.server.submit(() -> {
                 try {
@@ -91,21 +75,12 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
     private boolean checkIfMutedCommand(String string) {
         int x = string.indexOf(" ");
         String rawCommand = string.substring(0, x != -1 ? x : string.length());
+        
         for (String command : ConfigManager.getConfig().mutedCommands) {
             if (rawCommand.equals(command)) {
-                for (var punishment : BanHammerImpl.CACHED_PUNISHMENTS) {
-                    if (!punishment.isExpired() && punishment.type == PunishmentType.MUTE && punishment.playerUUID.equals(this.player.getUUID())) {
-                        this.player.displayClientMessage(punishment.getDisconnectMessage(PlaceholderContext.of(this.player)), false);
-                        return true;
-                    }
-                }
-
-                var punishments = BanHammerImpl.getPlayersPunishments(this.player.getUUID().toString(), PunishmentType.MUTE);
-                if (!punishments.isEmpty()) {
-                    var punishment = punishments.getFirst();
-
-
-                    this.player.displayClientMessage(punishment.getDisconnectMessage(PlaceholderContext.of(this.player)), false);
+                var mute = BHUtils.getActiveMute(this.player);
+                if (mute != null) {
+                    this.player.displayClientMessage(mute.getDisconnectMessage(PlaceholderContext.of(this.player)), false);
                     return true;
                 }
                 return false;
