@@ -2,37 +2,38 @@
   "schemaVersion": 1,
   "id": "banhammer",
   "version": "${version}",
-
   "name": "BanHammer",
   "description": "Simple, customisable punishment utility mod for Fabric",
   "authors": [
     "Patbox"
   ],
   "contributors": [
-	"Dexrn ZacAttack"
+    "Dexrn ZacAttack"
   ],
   "contact": {
     "homepage": "https://pb4.eu",
     "sources": "https://github.com/Patbox/BanHammer"
   },
-
   "icon": "assets/banhammer/icon.png",
   "license": "LGPLv3",
-
   "environment": "server",
   "entrypoints": {
     "main": [
       "eu.pb4.banhammer.impl.BanHammerImpl"
     ],
-    "preLaunch": ["eu.pb4.banhammer.impl.CardboardWarning"]
+    "preLaunch": [
+      "eu.pb4.banhammer.impl.CardboardWarning"
+    ],
+    "voicechat": [
+      "eu.pb4.banhammer.impl.VoiceChatHandler"
+    ]
   },
   "mixins": [
     "banhammer.mixins.json"
   ],
-
   "depends": {
     "fabricloader": ">=0.16.0",
     "fabric": "*",
-    "minecraft": ">=1.21.11- <26.0"
+    "minecraft": ">=1.21.1- <26.0"
   }
 }
