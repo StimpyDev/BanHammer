@@ -3,6 +3,8 @@ package eu.pb4.banhammer.impl;
 import com.google.common.net.InetAddresses;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.PropertyMap;
+import eu.pb4.banhammer.api.PunishmentData;
+import eu.pb4.banhammer.api.PunishmentType;
 import eu.pb4.banhammer.impl.config.ConfigManager;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.ChatFormatting;
@@ -19,6 +21,23 @@ import java.util.*;
 
 public final class BHUtils {
     private static final Component UNKNOWN_PLAYER = Component.literal("Unknown player").withStyle(ChatFormatting.ITALIC);
+
+    public static PunishmentData getActiveMute(ServerPlayer player) {
+        if (player == null) return null;
+
+        for (var punishment : BanHammerImpl.CACHED_PUNISHMENTS) {
+            if (!punishment.isExpired() && punishment.type == PunishmentType.MUTE && punishment.playerUUID.equals(player.getUUID())) {
+                return punishment;
+            }
+        }
+
+        var punishments = BanHammerImpl.getPlayersPunishments(player.getUUID().toString(), PunishmentType.MUTE);
+        if (!punishments.isEmpty()) {
+            return punishments.getFirst();
+        }
+
+        return null;
+    }
 
     public static String stringifyAddress(SocketAddress socketAddress) {
         String string = socketAddress.toString();
@@ -159,8 +178,3 @@ public final class BHUtils {
         return System.currentTimeMillis() / 1000;
     }
 }
-
-
-
-
-
